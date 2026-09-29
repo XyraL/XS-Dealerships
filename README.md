@@ -6,10 +6,13 @@
   <a href="https://github.com/XyraL/XS-Dealerships/releases"><img src="https://img.shields.io/github/v/release/XyraL/XS-Dealerships?style=flat-square&color=d6283a&label=release" alt="Latest release"></a>
   <img src="https://img.shields.io/badge/framework-QBox%20%7C%20QBCore-55dcff?style=flat-square" alt="framework">
   <img src="https://img.shields.io/badge/price-free-30d158?style=flat-square" alt="price">
+  <a href="https://xyralscripts.dev/docs-xs-dealerships"><img src="https://img.shields.io/badge/docs-xyralscripts.dev-a889ff?style=flat-square" alt="docs"></a>
   <a href="https://discord.gg/XRURAw4TM2"><img src="https://img.shields.io/badge/support-discord-5865F2?style=flat-square" alt="support"></a>
 </p>
 
 <p align="center">
+  <a href="https://xyralscripts.dev/xs-dealerships">Website</a> &nbsp;·&nbsp;
+  <a href="https://xyralscripts.dev/docs-xs-dealerships">Setup guide</a> &nbsp;·&nbsp;
   <a href="https://github.com/XyraL/XS-Dealerships/releases">Releases</a> &nbsp;·&nbsp;
   <a href="https://discord.gg/XRURAw4TM2">Discord</a>
 </p>
