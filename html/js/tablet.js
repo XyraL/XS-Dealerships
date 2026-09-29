@@ -1,10 +1,11 @@
 (function () {
     const { el } = XS;
 
-    const T = { dealers: [], data: null, tab: 'stock', ticker: null, clock: null };
+    const T = { dealers: [], data: null, tab: 'floor', sell: null, ticker: null, clock: null };
     const $ = (id) => document.getElementById(id);
 
     const TABS = [
+        ['floor', 'Floor'],
         ['stock', 'Stock'],
         ['orders', 'Orders'],
         ['money', 'Money', true],
@@ -35,6 +36,183 @@
         if (!data) return;
         T.data = data;
         render();
+    }
+
+    function carLabel(car) {
+        return `${car.brand ? `${car.brand} ` : ''}${car.name}`;
+    }
+
+    function stockText(stock) {
+        if (stock < 0) return 'Always in stock';
+        if (stock === 0) return 'Sold out';
+        return `${stock} in stock`;
+    }
+
+    async function swap(spot, model) {
+        const res = await XS.post('tabletSwap', { dealer: dealerId(), spot: spot.id, model });
+        if (!res || !res.ok) {
+            XS.toast((res && res.error) || 'The display did not change.', 'bad');
+            render();
+            return;
+        }
+        const car = XS.list(T.data.stock).find((c) => c.model === model);
+        XS.toast(`Spot ${spot.number} now shows the ${car ? car.name : model}.`, 'good');
+        update(res.office);
+    }
+
+    function openSell(model) {
+        const sellable = XS.list(T.data.stock).filter((c) => c.stock !== 0);
+        T.sell = { model: model || (sellable[0] && sellable[0].model) || null };
+        render();
+    }
+
+    function floorCard(spot, cars, canSell) {
+        const swapped = spot.model !== spot.own;
+        const picker = el('select', { class: 'bk-in bk-sel left fl-pick', title: 'Show a different car here' },
+            cars.map((car) => el('option', { value: car.model, text: carLabel(car), selected: car.model === spot.model ? true : null })));
+        picker.addEventListener('change', () => swap(spot, picker.value));
+
+        return el('article', { class: `fl-card ${swapped ? 'swapped' : ''}` }, [
+            el('div', { class: 'fl-photo' }, XS.photo(spot.model, spot.name)),
+            el('div', { class: 'fl-body' }, [
+                el('span', { class: 'fl-spot', text: swapped ? `Spot ${spot.number} · swapped` : `Spot ${spot.number}` }),
+                el('b', { class: 'fl-name', text: spot.name }),
+                el('span', { class: 'fl-meta', text: `${XS.money(spot.price)} · ${stockText(spot.stock)}` }),
+                el('label', { class: 'fl-change' }, [el('span', { text: 'Show' }), picker]),
+                swapped ? el('button', { class: 'fl-reset', type: 'button', text: `Put the ${spot.ownName} back`, onclick: () => swap(spot, spot.own) }) : null,
+                el('button', {
+                    class: 'btn small primary fl-sell', type: 'button',
+                    text: spot.stock === 0 ? 'Sold out' : 'Sell this car',
+                    disabled: !canSell || spot.stock === 0 ? true : null,
+                    onclick: () => openSell(spot.model),
+                }),
+            ]),
+        ]);
+    }
+
+    function floorPanel() {
+        const spots = XS.list(T.data.floor);
+        const cars = XS.list(T.data.stock);
+        const canSell = role().canSell;
+
+        return [
+            el('section', { class: 'panel' }, [
+                el('h3', { text: `On display · ${spots.length}` }),
+                el('p', {
+                    class: 'fine',
+                    text: canSell
+                        ? 'Change what a spot shows, or sell its car to a customer standing with you. Everyone at the dealership sees the change.'
+                        : 'Change what a spot shows. Your grade cannot sell.',
+                }),
+                spots.length
+                    ? el('div', { class: 'fl-grid' }, spots.map((spot) => floorCard(spot, cars, canSell)))
+                    : el('p', { class: 'fine', text: 'This dealership has no showcase spots yet. They are placed in /dealerships.' }),
+            ]),
+            canSell && cars.length
+                ? el('button', { class: 'btn wide', type: 'button', text: 'Sell any car', onclick: () => openSell(null) })
+                : null,
+        ].filter(Boolean);
+    }
+
+    function sellPanel() {
+        const cars = XS.list(T.data.stock);
+        const sellable = cars.filter((c) => c.stock !== 0);
+        const back = el('button', {
+            class: 'btn ghost small sl-back', type: 'button', text: 'Back to the floor',
+            onclick: () => { T.sell = null; render(); },
+        });
+
+        let car = cars.find((c) => c.model === T.sell.model && c.stock !== 0) || sellable[0] || null;
+        if (!car) return [back, el('p', { class: 'fine', text: 'Nothing here is in stock to sell.' })];
+
+        let target = null;
+        const photo = el('div', { class: 'sl-photo' });
+        const brand = el('span', { class: 'sl-brand' });
+        const name = el('b', { class: 'sl-name' });
+        const meta = el('span', { class: 'sl-meta' });
+
+        const show = () => {
+            XS.clear(photo).append(XS.photo(car.model, car.name));
+            brand.textContent = car.brand || XS.title(car.category);
+            name.textContent = car.name;
+            meta.textContent = `${XS.money(car.price)} · ${stockText(car.stock)}`;
+        };
+
+        const picker = el('select', { class: 'bk-in bk-sel left sl-pick' },
+            sellable.map((c) => el('option', { value: c.model, text: carLabel(c), selected: c.model === car.model ? true : null })));
+        picker.addEventListener('change', () => {
+            car = sellable.find((c) => c.model === picker.value) || car;
+            T.sell.model = car.model;
+            show();
+        });
+
+        const people = el('div', { class: 'people' });
+        const send = el('button', { class: 'btn primary', type: 'button', text: 'Send the offer', disabled: true });
+
+        const look = async () => {
+            target = null;
+            send.disabled = true;
+            XS.clear(people).append(el('p', { class: 'fine', text: 'Looking for customers nearby…' }));
+
+            const list = XS.list(await XS.post('nearby', { dealer: dealerId() }));
+            XS.clear(people);
+
+            if (!list.length) {
+                people.append(el('p', { class: 'fine', text: 'Nobody is standing close enough. Bring them over and look again.' }));
+                return;
+            }
+
+            list.forEach((p) => {
+                const node = el('button', {
+                    class: 'person', type: 'button',
+                    onclick: () => {
+                        target = p.id;
+                        people.querySelectorAll('.person').forEach((n) => n.classList.toggle('on', n === node));
+                        send.disabled = false;
+                    },
+                }, [el('b', { text: p.name }), el('span', { text: `ID ${p.id}` })]);
+                people.append(node);
+            });
+        };
+
+        send.addEventListener('click', async () => {
+            if (!target) return;
+            send.disabled = true;
+
+            const res = await XS.post('offer', { dealer: dealerId(), model: car.model, target });
+            if (!res || !res.ok) {
+                XS.toast((res && res.error) || 'The offer could not be sent.', 'bad');
+                send.disabled = false;
+                return;
+            }
+
+            XS.toast(`Offer sent for the ${car.name}. It is up to them now.`, 'good');
+            T.sell = null;
+            render();
+        });
+
+        show();
+        look();
+
+        return [
+            back,
+            el('div', { class: 'sl-view' }, [
+                el('section', { class: 'panel sl-car' }, [
+                    el('h3', { text: 'The car' }),
+                    photo, brand, name, meta,
+                    el('label', { class: 'fl-change' }, [el('span', { text: 'Car' }), picker]),
+                ]),
+                el('section', { class: 'panel' }, [
+                    el('h3', { text: 'Who is buying?' }),
+                    people,
+                    el('div', { class: 'actions tight sl-send' }, [
+                        el('button', { class: 'btn', type: 'button', text: 'Look again', onclick: look }),
+                        send,
+                    ]),
+                    el('p', { class: 'fine', text: 'They pick the paint and how they pay. Your commission is paid when they accept.' }),
+                ]),
+            ]),
+        ];
     }
 
     function stockPanel() {
@@ -228,7 +406,11 @@
         visibleTabs().forEach((tab) => {
             nav.append(el('button', {
                 class: `tb-tab ${T.tab === tab.id ? 'on' : ''}`, type: 'button',
-                onclick: () => { T.tab = tab.id; render(); },
+                onclick: () => {
+                    T.tab = tab.id;
+                    T.sell = null;
+                    render();
+                },
             }, [el('em', { text: tab.no }), el('span', { text: tab.label })]));
         });
 
@@ -247,7 +429,8 @@
         stop();
         XS.setAccent(T.data.dealer.accent);
 
-        if (!role().isBoss && (T.tab === 'money' || T.tab === 'sales')) T.tab = 'stock';
+        if (!role().isBoss && (T.tab === 'money' || T.tab === 'sales')) T.tab = 'floor';
+        if (T.tab !== 'floor') T.sell = null;
         renderRail();
 
         const main = XS.clear($('tb-main'));
@@ -258,7 +441,8 @@
             el('h2', { text: page.label }),
         ]));
 
-        const panels = { stock: stockPanel, orders: ordersPanel, money: moneyPanel, sales: salesPanel, team: teamPanel }[T.tab]();
+        const pages = { floor: floorPanel, stock: stockPanel, orders: ordersPanel, money: moneyPanel, sales: salesPanel, team: teamPanel };
+        const panels = T.tab === 'floor' && T.sell ? sellPanel() : pages[T.tab]();
         panels.forEach((p) => main.append(p));
 
         T.ticker = setInterval(() => {
@@ -278,7 +462,8 @@
     function open(payload) {
         T.dealers = XS.list(payload.dealers);
         T.data = payload.data;
-        T.tab = 'stock';
+        T.tab = 'floor';
+        T.sell = null;
         render();
         tick();
         if (T.clock) clearInterval(T.clock);
@@ -302,6 +487,7 @@
                 return;
             }
             T.dealers = XS.list(res.data.dealers);
+            T.sell = null;
             update(res.data.data);
         });
     });

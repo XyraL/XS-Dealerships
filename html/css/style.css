@@ -47,6 +47,7 @@ h1, h2, h3, h4, .tab, .btn, .cat, .card-brand, .card-name, .card-price, .chip, .
 .slot-head, .pay b, .mini-name, .due-row span, .due, .empty b, .side-empty b, .st-name, .badge, .st-figures span,
 .st-figures b, .lg-head span, .lg-car b, .balance, .clock, .kpi span, .kpi b, .member-name b, .member-c, .tb-tab,
 #tb-name, .sr-money span, .sr-money b, .person b, .order b, .sale b, .sale-r b, .tx-amt,
+.fl-spot, .fl-name, .fl-change span, .sl-brand, .sl-name,
 .bk-kicker, .bk-dl b, .bk-new, .bk-chap, .bk-no, .bk-kick, .bk-sec h5, .bk-pt-col h5, .bk-in, .bk-yn, .bk-opt, .bk-btn, .bk-add,
 .bk-pt-t b, .bk-pr b, .bk-sold-head b, .bk-sr-name b, .bk-del, .bk-status, .bk-save, .td-label, #td-time {
     font-family: var(--display);
@@ -1205,3 +1206,46 @@ h1, h2, h3, h4, .tab, .btn, .cat, .card-brand, .card-name, .card-price, .chip, .
 .member-name span { font-size: 12px; color: var(--bk-dim); }
 .member-n { font-family: var(--mono); font-size: 13px; color: var(--bk-mid); }
 .member-c { text-align: right; font-size: 24px; font-weight: 700; color: #fff; }
+
+.fl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 12px; }
+.fl-card { display: flex; flex-direction: column; background: var(--bk-card); border: 1px solid var(--bk-line); animation: cardIn 0.3s both; }
+.fl-card.swapped { border-color: var(--bk-edge); }
+
+.fl-photo, .sl-photo { display: flex; align-items: center; justify-content: center; overflow: hidden; background: var(--studio); }
+.fl-photo { height: 124px; border-bottom: 1px solid var(--bk-soft); }
+.fl-photo img, .sl-photo img { max-width: 92%; object-fit: contain; filter: drop-shadow(0 12px 10px rgba(0, 0, 0, 0.7)); }
+.fl-photo img { max-height: 112px; }
+
+.fl-body { flex: 1; display: flex; flex-direction: column; gap: 7px; padding: 12px 14px 14px; }
+.fl-spot { font-size: 11px; font-weight: 600; letter-spacing: 0.26em; text-transform: uppercase; color: var(--accent-lift); }
+.fl-name { font-size: 26px; font-weight: 700; line-height: 1; text-transform: uppercase; color: #fff; }
+.fl-meta, .sl-meta { font-size: 13px; color: var(--bk-mid); }
+.fl-change { display: flex; align-items: baseline; gap: 10px; margin-top: 2px; }
+.fl-change span { flex-shrink: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--bk-dim); }
+.fl-pick, .sl-pick { flex: 1; min-width: 0; font-size: 17px; }
+
+.fl-reset {
+    align-self: flex-start;
+    padding: 0;
+    background: none;
+    border: 0;
+    color: var(--bk-mid);
+    font-size: 12px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.fl-reset:hover { color: #fff; }
+.fl-body > .btn.fl-sell { flex: none; margin-top: auto; }
+.fl-change { margin-bottom: 6px; }
+
+.sl-back { align-self: flex-start; }
+.sl-view { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
+.sl-car { display: flex; flex-direction: column; gap: 6px; }
+.sl-photo { height: 210px; margin-bottom: 8px; border: 1px solid var(--bk-soft); }
+.sl-photo img { max-height: 196px; }
+.sl-brand { font-size: 12px; font-weight: 600; letter-spacing: 0.28em; text-transform: uppercase; color: var(--accent-lift); }
+.sl-name { font-size: 40px; font-weight: 700; line-height: 0.95; text-transform: uppercase; color: #fff; }
+.sl-view .people { margin-bottom: 12px; }
+.sl-send { margin-bottom: 8px; }
+.sl-send .btn.primary { flex: 1; }

@@ -52,6 +52,21 @@ lib.callback.register('XS-Dealerships:server:tablet', function(src, dealerId)
     return true, { dealers = list, data = Office.Data(src, chosen) }
 end)
 
+lib.callback.register('XS-Dealerships:server:tabletSwap', function(src, dealerId, spotId, model)
+    local dealer = Store.Get(dealerId)
+    if not dealer or dealer.mode ~= 'job' then return false, 'That dealership no longer exists.' end
+
+    if not Store.Role(src, dealer).staff then return false, 'Only staff can change the display.' end
+
+    local allowed, why = Tablet.CanUse(src, dealer)
+    if not allowed then return false, why end
+
+    local ok, err = Showcase.Set(dealer, spotId, model)
+    if not ok then return false, err end
+
+    return true, Office.Data(src, dealer)
+end)
+
 lib.callback.register('XS-Dealerships:server:moveMoney', function(src, dealerId, direction, amount)
     local dealer = Store.Get(dealerId)
     if not dealer or dealer.mode ~= 'job' then return false, 'That dealership no longer exists.' end

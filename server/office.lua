@@ -90,6 +90,7 @@ function Office.Data(src, dealer)
         dealer = { id = dealer.id, name = dealer.name, type = dealer.type, accent = dealer.settings.accent },
         role = role,
         stock = stock,
+        floor = Showcase.Floor(dealer),
         orders = Orders.Open(dealer),
         team = team(dealer),
         onDuty = Framework.OnDutyCount(dealer.job, dealer.settings.staff.requireDuty),

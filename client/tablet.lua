@@ -100,6 +100,11 @@ RegisterNUICallback('tablet', function(data, cb)
     cb({ ok = ok, error = not ok and result or nil, data = ok and result or nil })
 end)
 
+RegisterNUICallback('tabletSwap', function(data, cb)
+    local ok, result = lib.callback.await('XS-Dealerships:server:tabletSwap', false, data.dealer, data.spot, data.model)
+    cb({ ok = ok, error = not ok and result or nil, office = ok and result or nil })
+end)
+
 RegisterNUICallback('moveMoney', function(data, cb)
     local ok, result = lib.callback.await('XS-Dealerships:server:moveMoney', false, data.dealer, data.direction, data.amount)
     cb({ ok = ok, error = not ok and result or nil, office = ok and result or nil })

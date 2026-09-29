@@ -64,10 +64,11 @@ with the keys while the salesperson gets their commission. Each dealership
 decides whether customers can buy, swap the showcase cars and take test drives
 on their own, or only through staff.
 
-**The dealer tablet.** An item staff carry. Stock and ordering (paid from the
-business at a wholesale price, delivered after a while), the business account
-with paying in and taking out, every sale, and the team's sales and commission
-for the week.
+**The dealer tablet.** An item staff carry. The showroom floor, where they see
+what every showcase spot is showing, change it, and sell any car to the
+customer standing with them. Stock and ordering (paid from the business at a
+wholesale price, delivered after a while), the business account with paying in
+and taking out, every sale, and the team's sales and commission for the week.
 
 ## Requirements
 

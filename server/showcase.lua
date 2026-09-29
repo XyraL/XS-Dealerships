@@ -44,6 +44,54 @@ local function announce(dealer, spotId, model)
     TriggerClientEvent('XS-Dealerships:client:spot', -1, dealer.id, spotId, model)
 end
 
+local function setSpot(dealer, spot, model)
+    swapped[dealer.id] = swapped[dealer.id] or {}
+
+    if model == spot.model then
+        swapped[dealer.id][spot.id] = nil
+    else
+        swapped[dealer.id][spot.id] = { model = model, since = os.time() }
+    end
+
+    announce(dealer, spot.id, model)
+end
+
+function Showcase.Set(dealer, spotId, model)
+    local spot = findSpot(dealer, spotId)
+    if not spot then return false, 'That spot is gone.' end
+
+    model = tostring(model or ''):lower()
+    if not Store.Entry(dealer, model) then return false, 'This dealership does not sell that car.' end
+
+    setSpot(dealer, spot, model)
+    return true
+end
+
+function Showcase.Floor(dealer)
+    local out = {}
+
+    for index, spot in ipairs(dealer.points.spots) do
+        local model = Showcase.Current(dealer, spot.id)
+        local entry = Store.Entry(dealer, model)
+        local info = Framework.Vehicle(model) or {}
+        local own = Framework.Vehicle(spot.model) or {}
+
+        out[#out + 1] = {
+            id = spot.id,
+            number = index,
+            model = model,
+            own = spot.model,
+            ownName = own.name or spot.model,
+            name = info.name or model,
+            brand = info.brand or '',
+            price = entry and entry.price or 0,
+            stock = entry and entry.stock or 0,
+        }
+    end
+
+    return out
+end
+
 lib.callback.register('XS-Dealerships:server:swap', function(src, dealerId, spotId, model)
     local dealer = Store.Get(dealerId)
     if not dealer then return false, 'That dealership no longer exists.' end
@@ -61,15 +109,7 @@ lib.callback.register('XS-Dealerships:server:swap', function(src, dealerId, spot
         return false, 'Walk up to the car first.'
     end
 
-    swapped[dealer.id] = swapped[dealer.id] or {}
-
-    if model == spot.model then
-        swapped[dealer.id][spot.id] = nil
-    else
-        swapped[dealer.id][spot.id] = { model = model, since = os.time() }
-    end
-
-    announce(dealer, spot.id, model)
+    setSpot(dealer, spot, model)
     return true
 end)
 

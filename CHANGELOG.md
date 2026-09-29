@@ -17,6 +17,7 @@ First release.
 - Finance payments come out of the bank on their own; missed ones end in the car being taken back
 - Swap the car on a showcase spot for any other the dealership sells
 - Timed test drives
-- A dealer tablet for staff: stock, ordering, the business account, sales and the team
+- A dealer tablet for staff: the showroom floor, stock, ordering, the business account, sales and the team
+- Staff can change the showcase cars and sell to a customer from the tablet
 - Works with most banking, keys, fuel, garage and inventory resources, found on its own
 - /dealerdiag prints what the resource found and why something might not work
