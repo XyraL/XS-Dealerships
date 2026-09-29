@@ -1,0 +1,5 @@
+# Keep LF in the repo and in the working tree. Lua and the checkers both read
+# these files as text, and a CRLF checkout makes pattern matches silently miss.
+* text=auto eol=lf
+*.png binary
+*.jpg binary

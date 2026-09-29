@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XS-Dealerships</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="scrim" hidden></div>
+
+<div id="stage">
+  <section id="showroom" class="sheet" hidden>
+    <header class="masthead">
+      <div class="mast-left">
+        <span class="kicker" id="sr-kicker"></span>
+        <h1 id="sr-name"></h1>
+      </div>
+      <nav class="tabs" id="sr-tabs"></nav>
+      <button class="x" id="sr-close" type="button" title="Close">×</button>
+    </header>
+    <div class="banner" id="sr-banner" hidden></div>
+
+    <div class="pane showroom-pane" data-pane="showroom">
+      <aside class="index">
+        <input type="search" id="sr-search" placeholder="Search this showroom…">
+        <span class="index-h">Chapters</span>
+        <div class="cats" id="sr-cats"></div>
+      </aside>
+      <div class="grid" id="sr-grid"></div>
+      <aside class="side" id="sr-side"></aside>
+    </div>
+
+    <div class="pane" data-pane="finance" hidden>
+      <div class="pane-pad" id="fin-list"></div>
+    </div>
+
+  </section>
+
+  <section id="offer" class="sheet sheet-offer" hidden></section>
+
+  <section id="tablet" class="device" hidden>
+    <div class="bezel">
+      <span class="cam"></span>
+      <div class="screen">
+        <div class="status"><span id="tb-time">12:00</span><span>XS DEALER MANAGEMENT</span><span class="batt"><i></i>84%</span></div>
+        <div class="tb-app">
+          <aside class="tb-rail">
+            <div class="tb-brand"><b id="tb-name"></b><select id="tb-switch" hidden></select></div>
+            <nav class="tb-nav" id="tb-nav"></nav>
+            <div class="tb-duty" id="tb-duty"></div>
+            <button class="btn ghost small" id="tb-close" type="button">Put it away</button>
+          </aside>
+          <main class="tb-main" id="tb-main"></main>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="creator" class="sheet sheet-creator" hidden>
+    <header class="masthead">
+      <div class="mast-left">
+        <span class="kicker">DEALERSHIP CREATOR</span>
+        <h1>Dealerships</h1>
+      </div>
+      <nav class="tabs" id="cr-tabs"></nav>
+      <button class="x" id="cr-close" type="button" title="Close — your changes are kept">×</button>
+    </header>
+    <div class="creator-grid">
+      <aside class="cr-list" id="cr-list"></aside>
+      <div class="cr-main">
+        <div class="cr-body" id="cr-body"></div>
+        <div class="cr-confirm" id="cr-confirm" hidden></div>
+        <footer class="cr-foot" id="cr-foot"></footer>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div id="testdrive" hidden>
+  <span class="td-label">TEST DRIVE</span>
+  <b id="td-time">0:00</b>
+  <span class="td-track"><span id="td-fill"></span></span>
+  <em>/endtestdrive to hand it back early</em>
+</div>
+
+<div id="toasts"></div>
+
+<script src="js/core.js"></script>
+<script src="js/sticker.js"></script>
+<script src="js/showroom.js"></script>
+<script src="js/finance.js"></script>
+<script src="js/tablet.js"></script>
+<script src="js/offer.js"></script>
+<script src="js/hud.js"></script>
+<script src="js/creator.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
