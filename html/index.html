@@ -11,34 +11,34 @@
 <div id="scrim" hidden></div>
 
 <div id="stage">
-  <section id="showroom" class="sheet" hidden>
-    <header class="masthead">
-      <div class="mast-left">
-        <span class="kicker" id="sr-kicker"></span>
-        <h1 id="sr-name"></h1>
+  <section id="showroom" class="book" hidden>
+    <aside class="bk-spine">
+      <span class="bk-kicker" id="sr-kicker"></span>
+      <h1 class="bk-title sr-title" id="sr-name"></h1>
+      <input type="search" class="bk-search" id="sr-search" placeholder="Search this showroom…">
+      <span class="bk-kicker sr-cats-h">Chapters</span>
+      <div class="sr-cats" id="sr-cats"></div>
+      <div class="sr-wallet" id="sr-wallet"></div>
+    </aside>
+    <div class="bk-pages">
+      <header class="bk-head">
+        <nav class="bk-chapters" id="sr-tabs"></nav>
+        <button class="bk-x" id="sr-close" type="button" title="Close">×</button>
+      </header>
+      <div class="banner" id="sr-banner" hidden></div>
+
+      <div class="pane showroom-pane" data-pane="showroom">
+        <div class="grid" id="sr-grid"></div>
+        <aside class="side" id="sr-side"></aside>
       </div>
-      <nav class="tabs" id="sr-tabs"></nav>
-      <button class="x" id="sr-close" type="button" title="Close">×</button>
-    </header>
-    <div class="banner" id="sr-banner" hidden></div>
 
-    <div class="pane showroom-pane" data-pane="showroom">
-      <aside class="index">
-        <input type="search" id="sr-search" placeholder="Search this showroom…">
-        <span class="index-h">Chapters</span>
-        <div class="cats" id="sr-cats"></div>
-      </aside>
-      <div class="grid" id="sr-grid"></div>
-      <aside class="side" id="sr-side"></aside>
+      <div class="pane" data-pane="finance" hidden>
+        <div class="pane-pad" id="fin-list"></div>
+      </div>
     </div>
-
-    <div class="pane" data-pane="finance" hidden>
-      <div class="pane-pad" id="fin-list"></div>
-    </div>
-
   </section>
 
-  <section id="offer" class="sheet sheet-offer" hidden></section>
+  <section id="offer" class="offer-book" hidden></section>
 
   <section id="tablet" class="device" hidden>
     <div class="bezel">
@@ -47,7 +47,11 @@
         <div class="status"><span id="tb-time">12:00</span><span>XS DEALER MANAGEMENT</span><span class="batt"><i></i>84%</span></div>
         <div class="tb-app">
           <aside class="tb-rail">
-            <div class="tb-brand"><b id="tb-name"></b><select id="tb-switch" hidden></select></div>
+            <div class="tb-brand">
+              <span class="bk-kicker">Dealer management</span>
+              <b id="tb-name"></b>
+              <select id="tb-switch" class="bk-in bk-sel left" hidden></select>
+            </div>
             <nav class="tb-nav" id="tb-nav"></nav>
             <div class="tb-duty" id="tb-duty"></div>
             <button class="btn ghost small" id="tb-close" type="button">Put it away</button>

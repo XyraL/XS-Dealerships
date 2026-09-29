@@ -76,7 +76,7 @@ XS.ago = function (stamp) {
 };
 
 const SILHOUETTE = 'data:image/svg+xml;utf8,' + encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 140"><path fill="#c9c4b8" d="M40 104c-12 0-20-6-20-16 0-9 5-15 16-18l46-12 28-22c7-5 15-8 24-8h70c10 0 19 3 26 9l30 24 26 5c14 3 22 12 22 25 0 8-6 13-14 13h-8a26 26 0 0 0-50 0H106a26 26 0 0 0-50 0z"/><circle cx="81" cy="108" r="19" fill="#9d978a"/><circle cx="233" cy="108" r="19" fill="#9d978a"/></svg>');
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 140"><path fill="#3a3a40" d="M40 104c-12 0-20-6-20-16 0-9 5-15 16-18l46-12 28-22c7-5 15-8 24-8h70c10 0 19 3 26 9l30 24 26 5c14 3 22 12 22 25 0 8-6 13-14 13h-8a26 26 0 0 0-50 0H106a26 26 0 0 0-50 0z"/><circle cx="81" cy="108" r="19" fill="#26262b"/><circle cx="233" cy="108" r="19" fill="#26262b"/></svg>');
 
 XS.photo = function (model, alt) {
     const img = XS.el('img', { alt: alt || '', loading: 'lazy', draggable: 'false' });
@@ -120,7 +120,7 @@ XS.barcode = function (seed) {
         x += w;
         return r;
     }).join('');
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${x} 40" preserveAspectRatio="none"><g fill="#16181c">${rects}</g></svg>`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${x} 40" preserveAspectRatio="none"><g fill="#8a8d95">${rects}</g></svg>`;
     return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
 };
 

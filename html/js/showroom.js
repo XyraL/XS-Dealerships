@@ -44,7 +44,7 @@
     function renderMast() {
         const d = dealer();
         const typeLabel = { cars: 'Cars', luxury: 'Luxury', bikes: 'Motorcycles', trucks: 'Trucks & vans', boats: 'Boats', aircraft: 'Aircraft' }[d.type] || XS.title(d.type);
-        $('sr-kicker').textContent = `${typeLabel} · ${d.mode === 'job' ? 'Staffed dealership' : 'Open to all'}`.toUpperCase();
+        $('sr-kicker').textContent = `${typeLabel} · ${d.mode === 'job' ? 'Staffed' : 'Open to all'}`;
         $('sr-name').textContent = d.name;
 
         const tabs = XS.clear($('sr-tabs'));
@@ -52,10 +52,22 @@
 
         list.forEach(([id, label]) => {
             tabs.append(el('button', {
-                class: `tab ${S.tab === id ? 'on' : ''}`, type: 'button', text: label,
+                class: `bk-chap tab ${S.tab === id ? 'on' : ''}`, type: 'button', text: label,
                 onclick: () => setTab(id),
             }));
         });
+    }
+
+    function renderWallet() {
+        const money = S.data.money || {};
+        XS.clear($('sr-wallet')).append(
+            el('span', { class: 'bk-kicker', text: 'On you' }),
+            ...[['Cash', money.cash], ['Bank', money.bank]].map(([title, amount]) => el('div', { class: 'sr-money' }, [
+                el('span', { text: title }),
+                el('i'),
+                el('b', { text: XS.money(amount) }),
+            ])),
+        );
     }
 
     function setTab(tab) {
@@ -68,11 +80,15 @@
 
     function renderIndex() {
         const host = XS.clear($('sr-cats'));
-        categories().forEach(([id, count]) => {
+        categories().forEach(([id, count], index) => {
             host.append(el('button', {
                 class: `cat ${S.category === id ? 'on' : ''}`, type: 'button',
                 onclick: () => { S.category = id; renderIndex(); renderGrid(); },
-            }, [el('span', { text: id === 'all' ? 'Everything' : XS.title(id) }), el('em', { text: count })]));
+            }, [
+                el('i', { text: String(index + 1).padStart(2, '0') }),
+                el('span', { text: id === 'all' ? 'Everything' : XS.title(id) }),
+                el('em', { text: count }),
+            ]));
         });
     }
 
@@ -323,6 +339,7 @@
 
         $('sr-search').value = '';
         renderMast();
+        renderWallet();
         renderBanner();
         renderIndex();
         renderGrid();

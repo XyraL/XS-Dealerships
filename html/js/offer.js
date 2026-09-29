@@ -53,9 +53,9 @@
         accept.addEventListener('click', () => answer(true));
 
         host.append(
-            el('header', { class: 'masthead small' }, [
-                el('div', { class: 'mast-left' }, [
-                    el('span', { class: 'kicker', text: `${(offer.dealer && offer.dealer.name) || 'Dealership'} · An offer`.toUpperCase() }),
+            el('header', { class: 'offer-head' }, [
+                el('div', { class: 'offer-title' }, [
+                    el('small', { class: 'bk-kick', text: `${(offer.dealer && offer.dealer.name) || 'Dealership'} · An offer` }),
                     el('h1', { text: `${offer.seller} is selling you a car` }),
                 ]),
                 clock,
@@ -80,6 +80,7 @@
 
         const tick = () => {
             clock.textContent = `${left}s to decide`;
+            clock.classList.toggle('late', left <= 10);
             if (left <= 0) {
                 stop();
                 if (!answered) {

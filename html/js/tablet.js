@@ -5,12 +5,18 @@
     const $ = (id) => document.getElementById(id);
 
     const TABS = [
-        ['stock', 'Stock', '▦'],
-        ['orders', 'Orders', '⇣'],
-        ['money', 'Money', '$', true],
-        ['sales', 'Sales', '✓', true],
-        ['team', 'Team', '☺'],
+        ['stock', 'Stock'],
+        ['orders', 'Orders'],
+        ['money', 'Money', true],
+        ['sales', 'Sales', true],
+        ['team', 'Team'],
     ];
+
+    function visibleTabs() {
+        const boss = role().isBoss;
+        return TABS.filter(([, , bossOnly]) => !bossOnly || boss)
+            .map(([id, label], index) => ({ id, label, no: String(index + 1).padStart(2, '0') }));
+    }
 
     function dealerId() {
         return T.data && T.data.dealer ? T.data.dealer.id : null;
@@ -95,7 +101,7 @@
                 kpi('On the way', XS.list(data.orders).reduce((n, o) => n + o.quantity, 0)),
             ]),
             el('section', { class: 'panel' }, [
-                el('h3', { text: 'Stock' }),
+                el('h3', { text: 'Every car here' }),
                 canOrder ? el('p', { class: 'fine', text: `Orders are paid from the business account at ${data.order.wholesale}% of the price and arrive in ${XS.duration(data.order.deliveryMinutes * 60)}.` })
                     : el('p', { class: 'fine', text: 'Your grade cannot order stock.' }),
                 table,
@@ -185,7 +191,7 @@
                 kpi('Commission paid', XS.money(sales.reduce((n, s) => n + (s.commission || 0), 0))),
             ]),
             el('section', { class: 'panel' }, [
-                el('h3', { text: 'Sales' }),
+                el('h3', { text: 'Latest sales' }),
                 sales.length
                     ? el('div', { class: 'sales' }, sales.map((s) => el('div', { class: 'sale' }, [
                         el('div', {}, [el('b', { text: s.name }), el('span', { text: `${s.buyer}${s.seller ? ` · sold by ${s.seller}` : ' · bought direct'} · ${s.plate}` })]),
@@ -218,14 +224,12 @@
 
     function renderRail() {
         const nav = XS.clear($('tb-nav'));
-        const boss = role().isBoss;
 
-        TABS.forEach(([id, label, glyph, bossOnly]) => {
-            if (bossOnly && !boss) return;
+        visibleTabs().forEach((tab) => {
             nav.append(el('button', {
-                class: `tb-tab ${T.tab === id ? 'on' : ''}`, type: 'button',
-                onclick: () => { T.tab = id; render(); },
-            }, [el('span', { class: 'tb-glyph', text: glyph }), el('span', { text: label })]));
+                class: `tb-tab ${T.tab === tab.id ? 'on' : ''}`, type: 'button',
+                onclick: () => { T.tab = tab.id; render(); },
+            }, [el('em', { text: tab.no }), el('span', { text: tab.label })]));
         });
 
         $('tb-name').textContent = T.data.dealer.name;
@@ -247,8 +251,12 @@
         renderRail();
 
         const main = XS.clear($('tb-main'));
-        const title = TABS.find((t) => t[0] === T.tab)[1];
-        main.append(el('div', { class: 'tb-head' }, [el('span', { class: 'kicker', text: 'DEALER MANAGEMENT' }), el('h2', { text: title })]));
+        const page = visibleTabs().find((t) => t.id === T.tab);
+        main.append(el('div', { class: 'tb-head' }, [
+            el('span', { class: 'bk-no', text: page.no }),
+            el('small', { class: 'bk-kick', text: T.data.dealer.name }),
+            el('h2', { text: page.label }),
+        ]));
 
         const panels = { stock: stockPanel, orders: ordersPanel, money: moneyPanel, sales: salesPanel, team: teamPanel }[T.tab]();
         panels.forEach((p) => main.append(p));
