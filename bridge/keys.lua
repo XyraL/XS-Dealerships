@@ -53,7 +53,15 @@ else
     RegisterNetEvent('XS-Dealerships:client:giveKeys', function(netId, plate)
         if not Keys.name then return end
 
-        local vehicle = NetworkDoesNetworkIdExist(netId) and NetworkGetEntityFromNetworkId(netId) or 0
+        local vehicle = 0
+        for _ = 1, 100 do
+            if NetworkDoesNetworkIdExist(netId) then
+                vehicle = NetworkGetEntityFromNetworkId(netId)
+                if vehicle ~= 0 and DoesEntityExist(vehicle) then break end
+                vehicle = 0
+            end
+            Wait(50)
+        end
 
         local ok, err = pcall(function()
             if Keys.name == 'qb-vehiclekeys' then

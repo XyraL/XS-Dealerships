@@ -54,7 +54,7 @@ lib.callback.register('XS-Dealerships:server:swap', function(src, dealerId, spot
     model = tostring(model or ''):lower()
     if not Store.Entry(dealer, model) then return false, 'This dealership does not sell that car.' end
 
-    if not Store.CanShop(src, dealer) then return false, 'Only staff can change the display here.' end
+    if not Store.Can(src, dealer, 'swap') then return false, 'Only staff can change the display here.' end
 
     local ped = GetPlayerPed(src)
     if Util.Distance(GetEntityCoords(ped), spot) > Config.Purchase.maxDistance then
@@ -77,21 +77,19 @@ CreateThread(function()
     while true do
         Wait(30000)
 
-        local limit = (tonumber(Config.Showcase.resetMinutes) or 0) * 60
-        if limit > 0 then
-            local now = os.time()
+        local now = os.time()
 
-            for dealerId, spots in pairs(swapped) do
-                local dealer = Store.Get(dealerId)
+        for dealerId, spots in pairs(swapped) do
+            local dealer = Store.Get(dealerId)
+            local limit = dealer and (tonumber(dealer.settings.showcase.resetMinutes) or 0) * 60 or 0
 
-                for spotId, swap in pairs(spots) do
-                    if not dealer then
-                        spots[spotId] = nil
-                    elseif now - swap.since >= limit then
-                        spots[spotId] = nil
-                        local spot = findSpot(dealer, spotId)
-                        if spot then announce(dealer, spotId, spot.model) end
-                    end
+            for spotId, swap in pairs(spots) do
+                if not dealer then
+                    spots[spotId] = nil
+                elseif limit > 0 and now - swap.since >= limit then
+                    spots[spotId] = nil
+                    local spot = findSpot(dealer, spotId)
+                    if spot then announce(dealer, spotId, spot.model) end
                 end
             end
         end

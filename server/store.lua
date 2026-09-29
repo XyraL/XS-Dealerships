@@ -1,25 +1,153 @@
 Store = { dealers = {}, loaded = false }
 
-local ACCESS = { anyone = true, job = true }
+local CUSTOMER_ACTIONS = { 'buy', 'swap', 'test' }
 
-local function defaults(dealer)
+local function flag(value, fallback)
+    if value == nil then return fallback == true end
+    return value == true or value == 1
+end
+
+local function number(value, fallback, low, high)
+    local n = tonumber(value) or tonumber(fallback) or low
+    if n < low then return low end
+    if n > high then return high end
+    return n
+end
+
+local function whole(value, fallback, low, high)
+    return math.floor(number(value, fallback, low, high))
+end
+
+local function first(...)
+    for i = 1, select('#', ...) do
+        local value = select(i, ...)
+        if value ~= nil then return value end
+    end
+    return nil
+end
+
+local function section(settings, key)
+    return type(settings[key]) == 'table' and settings[key] or {}
+end
+
+local function word(value, fallback, max)
+    local text = tostring(value or ''):gsub('[^%w_%-]', '')
+    if text == '' then text = tostring(fallback or '') end
+    return text:sub(1, max)
+end
+
+local function plateText(value, fallback)
+    local text = tostring(value or ''):upper():gsub('[^%w ]', '')
+    text = text:gsub('^%s+', ''):gsub('%s+$', '')
+    if text == '' then text = tostring(fallback or 'FOR SALE') end
+    return text:sub(1, 8)
+end
+
+local function gradeRates(rates)
+    local out = {}
+    if type(rates) ~= 'table' then return out end
+
+    for grade, rate in pairs(rates) do
+        local level, value = tonumber(grade), tonumber(rate)
+        if level and value then out[tostring(math.floor(level))] = Util.Clamp(value, 0, 100) end
+    end
+
+    return out
+end
+
+local function settingsFor(dealer)
     local settings = type(dealer.settings) == 'table' and dealer.settings or {}
     local typeInfo = Util.TypeInfo(dealer.type)
+    local out = {}
 
-    settings.access = ACCESS[settings.access] and settings.access or 'anyone'
-    settings.testDrives = settings.testDrives ~= false
-    settings.finance = settings.finance ~= false
-    settings.commission = tonumber(settings.commission)
-    settings.accent = type(settings.accent) == 'string' and settings.accent:match('^#%x%x%x%x%x%x$') and settings.accent or '#b3121b'
+    out.accent = type(settings.accent) == 'string' and settings.accent:match('^#%x%x%x%x%x%x$') and settings.accent or '#b3121b'
 
-    local blip = type(settings.blip) == 'table' and settings.blip or {}
-    settings.blip = {
-        show = blip.show ~= false,
-        sprite = math.floor(tonumber(blip.sprite) or typeInfo.blip or 326),
-        colour = math.floor(tonumber(blip.colour) or 3),
+    local blip = section(settings, 'blip')
+    out.blip = {
+        show = flag(blip.show, true),
+        sprite = whole(blip.sprite, typeInfo.blip or 326, 0, 1000),
+        colour = whole(blip.colour, 3, 0, 85),
     }
 
-    dealer.settings = settings
+    local legacyAccess
+    if settings.access == 'job' then legacyAccess = false elseif settings.access == 'anyone' then legacyAccess = true end
+
+    local customers = section(settings, 'customers')
+    out.customers = {}
+    for _, action in ipairs(CUSTOMER_ACTIONS) do
+        out.customers[action] = flag(first(customers[action], legacyAccess), true)
+    end
+
+    local purchase = Config.Purchase
+    local sale = section(settings, 'sale')
+    out.sale = {
+        cash = flag(sale.cash, purchase.cash),
+        bank = flag(sale.bank, purchase.bank),
+        deliver = (sale.deliver == 'spawn' or sale.deliver == 'garage') and sale.deliver
+            or (purchase.deliver == 'garage' and 'garage' or 'spawn'),
+        garage = word(sale.garage, purchase.garage, 64),
+        warp = flag(sale.warp, purchase.warpIntoVehicle),
+    }
+
+    local drive = Config.TestDrive
+    local test = section(settings, 'test')
+    out.test = {
+        enabled = flag(first(test.enabled, settings.testDrives), drive.enabled),
+        seconds = whole(test.seconds, drive.seconds, 10, 1800),
+        private = flag(test.private, drive.privateWorld),
+        returnToStart = flag(test.returnToStart, drive.returnToStart),
+    }
+
+    local legacyFinance
+    if type(settings.finance) == 'boolean' then legacyFinance = settings.finance end
+
+    local terms = Config.Finance
+    local finance = section(settings, 'finance')
+    out.finance = {
+        enabled = flag(first(finance.enabled, legacyFinance), terms.enabled),
+        downPayment = number(finance.downPayment, terms.downPayment, 0, 100),
+        payments = whole(finance.payments, terms.payments, 1, 120),
+        interest = number(finance.interest, terms.interest, 0, 1000),
+        intervalHours = number(finance.intervalHours, terms.intervalHours, 0.1, 720),
+        missedLimit = whole(finance.missedLimit, terms.missedLimit, 1, 50),
+        repossess = (finance.repossess == 'remove' or finance.repossess == 'hold') and finance.repossess
+            or (terms.repossess == 'hold' and 'hold' or 'remove'),
+        holdDays = whole(finance.holdDays, terms.holdDays, 1, 90),
+        returnToStock = flag(finance.returnToStock, terms.returnToStock),
+    }
+
+    local jobs = Config.Jobs
+    local staff = section(settings, 'staff')
+    out.staff = {
+        commission = number(first(staff.commission, settings.commission), jobs.commission, 0, 100),
+        gradeCommission = gradeRates(first(staff.gradeCommission, jobs.gradeCommission)),
+        sellGrade = whole(staff.sellGrade, jobs.sellGrade, 0, 100),
+        orderGrade = whole(staff.orderGrade, jobs.orderGrade, 0, 100),
+        bossGrade = whole(staff.bossGrade, jobs.bossGrade, 0, 100),
+        requireDuty = flag(staff.requireDuty, jobs.requireDuty),
+    }
+
+    local defaults = Config.Stock
+    local stock = section(settings, 'stock')
+    out.stock = {
+        start = whole(stock.start, defaults.jobDefault, -1, 9999),
+        wholesale = number(stock.wholesale, defaults.wholesale, 0, 1000),
+        deliveryMinutes = number(stock.deliveryMinutes, defaults.deliveryMinutes, 0, 10080),
+        maxPerOrder = whole(stock.maxPerOrder, defaults.maxPerOrder, 1, 999),
+        maxPending = whole(stock.maxPending, defaults.maxPendingOrders, 1, 99),
+    }
+
+    local showcase = section(settings, 'showcase')
+    out.showcase = {
+        resetMinutes = number(showcase.resetMinutes, Config.Showcase.resetMinutes, 0, 1440),
+        plate = plateText(showcase.plate, Config.Showcase.plate),
+    }
+
+    return out
+end
+
+local function defaults(dealer)
+    dealer.settings = settingsFor(dealer)
 
     local points = type(dealer.points) == 'table' and dealer.points or {}
     local spots = {}
@@ -99,10 +227,13 @@ function Store.Broadcast(target)
     TriggerClientEvent('XS-Dealerships:client:dealers', target or -1, Store.PublicAll())
 end
 
+function Store.DefaultSettings()
+    return settingsFor({ type = Config.Types[1] and Config.Types[1].id or 'cars', mode = 'npc' })
+end
+
 local function commissionFor(dealer, grade)
-    local byGrade = Config.Jobs.gradeCommission or {}
-    local rate = byGrade[grade] or byGrade[tostring(grade)] or dealer.settings.commission or Config.Jobs.commission
-    return Util.Clamp(rate, 0, 100)
+    local staff = dealer.settings.staff
+    return Util.Clamp(staff.gradeCommission[tostring(grade)] or staff.commission, 0, 100)
 end
 
 function Store.Role(src, dealer)
@@ -111,22 +242,25 @@ function Store.Role(src, dealer)
 
     local job, onDuty, grade, isBoss = Framework.GetJob(src)
     if job ~= dealer.job then return role end
-    if Config.Jobs.requireDuty and not onDuty then
+
+    local staff = dealer.settings.staff
+    if staff.requireDuty and not onDuty then
         role.offDuty = true
         return role
     end
 
     role.staff = true
     role.grade = grade
-    role.canSell = grade >= Config.Jobs.sellGrade
-    role.canOrder = grade >= Config.Jobs.orderGrade
-    role.isBoss = isBoss or grade >= Config.Jobs.bossGrade
+    role.canSell = grade >= staff.sellGrade
+    role.canOrder = grade >= staff.orderGrade
+    role.isBoss = isBoss or grade >= staff.bossGrade
     role.commission = commissionFor(dealer, grade)
     return role
 end
 
-function Store.CanShop(src, dealer)
-    if dealer.mode ~= 'job' or dealer.settings.access ~= 'job' then return true end
+function Store.Can(src, dealer, action)
+    if dealer.mode ~= 'job' or dealer.job == '' then return true end
+    if dealer.settings.customers[action] then return true end
     return Store.Role(src, dealer).staff
 end
 

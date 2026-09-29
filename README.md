@@ -33,20 +33,24 @@ prices and stock, and four kinds of point you place in game:
 - **Where bought cars come out.**
 - **Where test drives start.**
 
-Each dealership is run by **nobody** — it just works — or by **a job**.
+Each dealership is run by **nobody** — it just works — or by **a job**, and has
+its own rules: who can buy, how people pay, the finance terms, how long a test
+drive lasts, what staff can do and earn, and how fast ordered cars arrive. All
+of it is set in the creator.
 
 **The showroom.** Walk up to the desk or a car on display. Every car has its
 window sticker: top speed, acceleration, braking and handling read from the
 car itself, so addon cars show their own numbers. Pick a paint colour, pay with
-cash, bank or finance, and the car comes out at the dealership with its keys, a
-plate and a full tank. If something is parked where it comes out, it goes
-straight to your garage instead.
+cash, bank or finance, and you are put in the driver's seat of your new car
+with its keys, a plate and a full tank. If something is parked where it comes
+out, it goes straight to your garage instead.
 
 Cars are sold stock. Paint is the only choice.
 
 **Showcase spots.** Look at the car on the floor, buy it, test drive it, or swap
 it for any other car the dealership sells. Everyone sees the swap, and the spot
-goes back to its own car when nobody has touched it for a while.
+goes back to its own car when nobody has touched it for a while. A test drive
+puts you straight in the car.
 
 **Finance.** A down payment, then payments that come out of the bank on their
 own. Miss too many in a row and the dealership takes the car back — gone for
@@ -55,9 +59,10 @@ offline is taken when they are next on, after a few minutes to move money
 around.
 
 **Job-run dealerships.** Staff sell to the customer in front of them: they pick
-the car, the customer picks the paint and how to pay, and the salesperson gets
-their commission. Customers can still buy on their own unless you set the
-dealership to staff only.
+the car, the customer picks the paint and how to pay, and the car comes out
+with the keys while the salesperson gets their commission. Each dealership
+decides whether customers can buy, swap the showcase cars and take test drives
+on their own, or only through staff.
 
 **The dealer tablet.** An item staff carry. Stock and ordering (paid from the
 business at a wholesale price, delivered after a while), the business account
@@ -126,30 +131,38 @@ Without one of these, `/dealerships` only tells you that you are not allowed.
 
 ### 4. Build a dealership
 
-Run `/dealerships` and press **New dealership**.
+Run `/dealerships` and press **New dealership**. The creator is a book with a
+page for each part:
 
-1. **Details** — the name, the type, and who runs it.
-2. **Cars** — add cars from your framework's vehicle list, or every car of the
+1. **Details** — the name, the type, who runs it, and the map blip.
+2. **Selling** — whether customers can buy, swap and test drive on their own,
+   cash and bank, where a bought car goes, the test drive length, and the plate
+   on display cars.
+3. **Finance** — the down payment, payments, interest, how often they come out,
+   and what happens when someone stops paying. A worked example shows what a
+   buyer would pay.
+4. **Staff** (job-run only) — which grades sell, order stock and see the money,
+   commission for each grade, and how ordering works.
+5. **Points** — place the sales desk, the showcase spots, and where bought cars
+   and test drives come out. You fly a camera to each spot, and vehicle points
+   show the actual car so you can see it fits. Every other point shows as an
+   outline while you place one, and turns red if they would hit.
+6. **Cars** — add cars from your framework's vehicle list, or every car of the
    dealership's type at once. Set each price and how many are in stock. Leave
    stock blank for unlimited.
-3. **Points** — place the sales desk, the showcase spots, and where bought cars
-   and test drives come out. You fly a camera to each spot, and vehicle points
-   show the actual car so you can see it fits.
-4. **Save.** Everyone on the server sees it straight away.
 
-Close the creator whenever you like — nothing unsaved is lost.
+Then **Save**. Everyone on the server sees it straight away. Close the creator
+whenever you like — nothing unsaved is lost.
+
+Most of `config.lua` is only the starting point for a new dealership. Once it
+is made, change it in the creator.
 
 ### 5. Job-run dealerships
 
-Make the job in your framework first, then pick it in the creator. What each
-grade can do is set in `Config.Jobs`:
-
-- `sellGrade` — sell to customers
-- `orderGrade` — order stock
-- `bossGrade` — see the account and the sales, and move money
-
-A job-run dealership starts each car with `Config.Stock.jobDefault` in stock.
-Staff order more from the tablet.
+Make the job in your framework first, then pick it in the creator. The Staff
+page lists the job's own grades, so you pick who does what by name. Staff
+order more cars from the tablet, and orders turn up after the time you set
+there (5 minutes to start with).
 
 ## Photos
 

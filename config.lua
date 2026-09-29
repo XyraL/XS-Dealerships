@@ -66,6 +66,11 @@ Config.Types = {
     { id = 'aircraft', label = 'Aircraft',      blip = 423, categories = { 'planes', 'helicopters' } },
 }
 
+-- ── Per-dealership settings ────────────────────────────────────────────────
+-- Most of what follows is only the starting point for a NEW dealership. Each
+-- dealership keeps its own copy, changed any time in /dealerships. Anything
+-- marked "server-wide" applies to every dealership and is only set here.
+
 -- ── Buying ─────────────────────────────────────────────────────────────────
 Config.Purchase = {
     -- 'spawn'  the car comes out at the dealership's bought-car point, with keys.
@@ -80,11 +85,12 @@ Config.Purchase = {
     cash = true,
     bank = true,
 
-    -- Plate pattern for new cars: A = letter, 1 = digit, anything else is kept.
-    -- Eight characters at most. Every plate is checked against every owned car.
+    -- Server-wide. Plate pattern for new cars: A = letter, 1 = digit, anything
+    -- else is kept. Eight characters at most. Every plate is checked against
+    -- every owned car.
     platePattern = '11AAA111',
 
-    -- How close a player has to be to the desk or a showcase car to buy it.
+    -- Server-wide. How close a player has to be to the desk or a showcase car.
     maxDistance = 12.0,
 }
 
@@ -115,8 +121,8 @@ Config.Paint = {
 
 -- ── Showcase spots ─────────────────────────────────────────────────────────
 Config.Showcase = {
-    -- Display cars are only spawned for players this close, to spare the
-    -- entity pool that every other resource shares.
+    -- Server-wide. Display cars are only spawned for players this close, to
+    -- spare the entity pool that every other resource shares.
     streamDistance = 70.0,
 
     -- A swapped car goes back to the spot's own car after this many minutes
@@ -138,17 +144,19 @@ Config.Desk = {
 
 -- ── Test drives ────────────────────────────────────────────────────────────
 Config.TestDrive = {
-    enabled = true,       -- a dealership can still switch them off in the creator
+    enabled = true,
     seconds = 90,
     -- Drive in a private copy of the world, so nobody else sees or hits the car.
     privateWorld = false,
     -- Put the driver back where they started when the time is up.
     returnToStart = true,
+    -- Server-wide. Plate text on test cars.
     plate = 'TESTDRV',
 }
 
 -- ── Finance ────────────────────────────────────────────────────────────────
--- A dealership can switch finance off in the creator.
+-- An agreement keeps the terms it was signed on, even if the dealership
+-- changes its own later.
 Config.Finance = {
     enabled = true,
     downPayment = 20,     -- percent of the price paid up front, from the bank
@@ -160,7 +168,8 @@ Config.Finance = {
     -- taken counts as missed; this many in a row and the car is taken back.
     missedLimit = 3,
 
-    -- Finance agreements a player can have open at once.
+    -- Server-wide. Finance agreements a player can have open at once, across
+    -- every dealership.
     maxActive = 2,
 
     -- What happens to a car when it is taken back:
@@ -177,9 +186,8 @@ Config.Finance = {
 -- ── Job-run dealerships ────────────────────────────────────────────────────
 -- A dealership bound to a job in the creator.
 Config.Jobs = {
-    -- Percent of the price paid to the salesperson who made the sale. A
-    -- dealership can set its own in the creator. On a financed sale it comes
-    -- out of the down payment.
+    -- Percent of the price paid to the salesperson who made the sale. On a
+    -- financed sale it comes out of the down payment.
     commission = 10,
     -- Optional per-grade commission: [grade] = percent
     gradeCommission = {},
@@ -189,9 +197,10 @@ Config.Jobs = {
     bossGrade = 3,        -- lowest grade that sees the account and the sales log
     requireDuty = true,   -- staff have to be on duty to do any of it
 
-    -- How close a customer has to be for a salesperson to sell to them.
+    -- Server-wide. How close a customer has to be for a salesperson to sell
+    -- to them.
     sellDistance = 6.0,
-    -- Seconds a customer has to answer a sale before it is withdrawn.
+    -- Server-wide. Seconds a customer has to answer a sale.
     offerSeconds = 60,
 }
 
@@ -209,14 +218,14 @@ Config.Tablet = {
 
 -- ── Stock ──────────────────────────────────────────────────────────────────
 Config.Stock = {
-    -- Starting stock for each car in a new job-run dealership. NPC dealerships
-    -- start unlimited. Both can be changed per car in the creator.
+    -- Stock a car starts with when it is added to a job-run dealership. NPC
+    -- dealerships start unlimited. Both can be changed per car in the creator.
     jobDefault = 3,
 
     -- Ordering more (job-run dealerships only): the business pays this percent
     -- of the sale price per car, and the order turns up after deliveryMinutes.
     wholesale = 70,
-    deliveryMinutes = 30,
+    deliveryMinutes = 5,
     maxPerOrder = 10,
     maxPendingOrders = 5,
 }

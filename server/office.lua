@@ -80,9 +80,11 @@ function Office.Data(src, dealer)
     local stock = {}
     for _, car in ipairs(Store.CatalogueFor(dealer)) do
         local entry = Store.Entry(dealer, car.model)
-        car.unitCost = Orders.UnitCost(entry)
+        car.unitCost = Orders.UnitCost(dealer, entry)
         stock[#stock + 1] = car
     end
+
+    local settings = dealer.settings.stock
 
     local data = {
         dealer = { id = dealer.id, name = dealer.name, type = dealer.type, accent = dealer.settings.accent },
@@ -90,12 +92,12 @@ function Office.Data(src, dealer)
         stock = stock,
         orders = Orders.Open(dealer),
         team = team(dealer),
-        onDuty = Framework.OnDutyCount(dealer.job),
+        onDuty = Framework.OnDutyCount(dealer.job, dealer.settings.staff.requireDuty),
         order = {
-            maxPerOrder = Config.Stock.maxPerOrder,
-            maxPending = Config.Stock.maxPendingOrders,
-            deliveryMinutes = Config.Stock.deliveryMinutes,
-            wholesale = Config.Stock.wholesale,
+            maxPerOrder = settings.maxPerOrder,
+            maxPending = settings.maxPending,
+            deliveryMinutes = settings.deliveryMinutes,
+            wholesale = settings.wholesale,
         },
     }
 
@@ -116,20 +118,25 @@ lib.callback.register('XS-Dealerships:server:catalogue', function(src, dealerId)
     local role = Store.Role(src, dealer)
     local methods = Purchase.Methods(dealer)
     local cars = Store.CatalogueFor(dealer)
+    local settings = dealer.settings
 
     if methods.finance then
-        for _, car in ipairs(cars) do car.terms = Util.FinanceTerms(car.price) end
+        for _, car in ipairs(cars) do car.terms = Util.FinanceTerms(car.price, settings.finance) end
     end
 
     return {
         dealer = Store.Public(dealer),
         cars = cars,
         role = role,
-        canShop = Store.CanShop(src, dealer),
+        can = {
+            buy = Store.Can(src, dealer, 'buy'),
+            swap = Store.Can(src, dealer, 'swap'),
+            test = Store.Can(src, dealer, 'test'),
+        },
         methods = methods,
-        testDrives = Config.TestDrive.enabled and dealer.settings.testDrives and dealer.points.test ~= nil,
-        testSeconds = Config.TestDrive.seconds,
-        staffOnDuty = dealer.mode == 'job' and Framework.OnDutyCount(dealer.job) or 0,
+        testDrives = settings.test.enabled and dealer.points.test ~= nil,
+        testSeconds = settings.test.seconds,
+        staffOnDuty = dealer.mode == 'job' and Framework.OnDutyCount(dealer.job, settings.staff.requireDuty) or 0,
         finance = Finance.List(src),
         money = { cash = Framework.GetMoney(src, 'cash'), bank = Framework.GetMoney(src, 'bank') },
     }

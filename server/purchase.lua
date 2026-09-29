@@ -20,9 +20,10 @@ function Purchase.Near(src, dealer)
 end
 
 local function methodAllowed(dealer, method)
-    if method == 'cash' then return Config.Purchase.cash end
-    if method == 'bank' then return Config.Purchase.bank end
-    if method == 'finance' then return Config.Finance.enabled and dealer.settings.finance end
+    local settings = dealer.settings
+    if method == 'cash' then return settings.sale.cash end
+    if method == 'bank' then return settings.sale.bank end
+    if method == 'finance' then return settings.finance.enabled end
     return false
 end
 
@@ -90,7 +91,7 @@ function Purchase.Process(buyer, dealer, model, method, paint, typeHint, seller)
             if open >= Config.Finance.maxActive then
                 return false, ('You already have %d cars on finance.'):format(open)
             end
-            terms = Util.FinanceTerms(price)
+            terms = Util.FinanceTerms(price, dealer.settings.finance)
             account = 'bank'
             due = terms.down
         end
@@ -114,7 +115,8 @@ function Purchase.Process(buyer, dealer, model, method, paint, typeHint, seller)
             return false, 'The payment did not go through.'
         end
 
-        local deliver = Config.Purchase.deliver
+        local sale = dealer.settings.sale
+        local deliver = sale.deliver
         if deliver == 'spawn' and (not dealer.points.buy or Vehicles.Blocked(dealer.points.buy)) then
             deliver = 'garage'
         end
@@ -122,7 +124,7 @@ function Purchase.Process(buyer, dealer, model, method, paint, typeHint, seller)
         local props = Vehicles.Paint(paint)
         props.fuelLevel = 100.0
 
-        local given, why = Framework.GiveVehicle(buyer, model, plate, props, deliver == 'garage', Config.Purchase.garage)
+        local given, why = Framework.GiveVehicle(buyer, model, plate, props, deliver == 'garage', sale.garage)
         if not given then
             if due > 0 then Framework.AddMoney(buyer, account, due, 'Dealership refund') end
             Store.AddStock(dealer, model, 1)
@@ -139,19 +141,18 @@ function Purchase.Process(buyer, dealer, model, method, paint, typeHint, seller)
             local vehicle = Vehicles.Spawn(model, dealer.points.buy, plate, Vehicles.TypeOf(model, typeHint))
 
             if vehicle then
-                if Config.Purchase.warpIntoVehicle then
-                    SetPedIntoVehicle(GetPlayerPed(buyer), vehicle, -1)
-                end
                 Keys.Give(buyer, vehicle, plate)
-                TriggerClientEvent('XS-Dealerships:client:delivered', buyer, NetworkGetNetworkIdFromEntity(vehicle), props, plate)
+                TriggerClientEvent('XS-Dealerships:client:delivered', buyer, NetworkGetNetworkIdFromEntity(vehicle), props, plate, sale.warp)
             else
-                MySQL.update.await('UPDATE `player_vehicles` SET `state` = 1, `garage` = ? WHERE `plate` = ?',
-                    { Config.Purchase.garage, plate })
+                Framework.ParkOwnedVehicle(plate, sale.garage)
                 deliver = 'garage'
             end
         end
 
-        return true, { plate = plate, model = model, name = name, method = method, garage = deliver == 'garage' }
+        return true, {
+            plate = plate, model = model, name = name, method = method,
+            garage = deliver == 'garage', warp = deliver == 'spawn' and sale.warp,
+        }
     end)
 
     busy[buyer] = nil
@@ -167,7 +168,7 @@ end
 lib.callback.register('XS-Dealerships:server:buy', function(src, dealerId, model, method, paint, typeHint)
     local dealer = Store.Get(dealerId)
     if not dealer then return false, 'That dealership no longer exists.' end
-    if not Store.CanShop(src, dealer) then return false, 'Buy through one of the salespeople here.' end
+    if not Store.Can(src, dealer, 'buy') then return false, 'Buy through one of the salespeople here.' end
     if not near(src, dealer) then return false, 'You are too far from the dealership.' end
     if not methodAllowed(dealer, method) then return false, 'That way of paying is not taken here.' end
 
@@ -224,7 +225,7 @@ lib.callback.register('XS-Dealerships:server:offer', function(src, dealerId, mod
         price = entry.price,
         seller = Framework.GetName(src),
         methods = Purchase.Methods(dealer),
-        terms = Util.FinanceTerms(entry.price),
+        terms = Util.FinanceTerms(entry.price, dealer.settings.finance),
         seconds = Config.Jobs.offerSeconds,
     })
 

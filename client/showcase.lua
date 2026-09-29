@@ -2,6 +2,7 @@ Showcase = {}
 
 local cars = {}
 local props = {}
+local hiddenDealer
 
 local function spotOptions(dealerId, spotId)
     local function dealer() return Dealers[dealerId] end
@@ -17,19 +18,19 @@ local function spotOptions(dealerId, spotId)
         },
         {
             id = 'buy', label = 'Buy this car', icon = 'fas fa-tag',
-            canInteract = function() return CanShop(dealer()) end,
+            canInteract = function() return Can(dealer(), 'buy') end,
             action = function() UI.OpenShowroom(dealerId, { spot = spotId, focus = current(), step = 'buy' }) end,
         },
         {
             id = 'swap', label = 'Show a different car', icon = 'fas fa-right-left',
-            canInteract = function() return CanShop(dealer()) end,
+            canInteract = function() return Can(dealer(), 'swap') end,
             action = function() UI.OpenShowroom(dealerId, { spot = spotId, swap = true }) end,
         },
         {
             id = 'test', label = 'Test drive', icon = 'fas fa-road',
             canInteract = function()
                 local d = dealer()
-                return CanShop(d) and Config.TestDrive.enabled and d.settings.testDrives and d.points.test ~= nil
+                return Can(d, 'test') and d.settings.test.enabled and d.points.test ~= nil
             end,
             action = function() UI.TestDrive(dealerId, current()) end,
         },
@@ -83,9 +84,14 @@ local function spawnCar(key, dealer, spot, model)
     SetEntityCanBeDamaged(vehicle, false)
     SetVehicleDoorsLocked(vehicle, 2)
     SetVehicleDirtLevel(vehicle, 0.0)
-    SetVehicleNumberPlateText(vehicle, Config.Showcase.plate)
+    SetVehicleNumberPlateText(vehicle, dealer.settings.showcase.plate)
     SetVehicleEngineOn(vehicle, false, true, true)
     SetVehicleRadioEnabled(vehicle, false)
+
+    if hiddenDealer == dealer.id then
+        SetEntityVisible(vehicle, false, false)
+        SetEntityCollision(vehicle, false, false)
+    end
 
     entry.entity = vehicle
     entry.loading = false
@@ -186,6 +192,17 @@ end)
 function Showcase.Entity(dealerId, spotId)
     local entry = cars[('%d:%s'):format(dealerId, spotId)]
     return entry and entry.entity or 0
+end
+
+function Showcase.Hide(dealerId, hidden)
+    hiddenDealer = hidden and dealerId or nil
+
+    for key, entry in pairs(cars) do
+        if tonumber(key:match('^(%d+):')) == dealerId and entry.entity ~= 0 and DoesEntityExist(entry.entity) then
+            SetEntityVisible(entry.entity, not hidden, false)
+            SetEntityCollision(entry.entity, not hidden, not hidden)
+        end
+    end
 end
 
 AddEventHandler('onResourceStop', function(resource)

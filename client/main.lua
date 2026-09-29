@@ -6,13 +6,56 @@ function IsStaff(dealer)
     if not dealer or dealer.mode ~= 'job' or dealer.job == '' then return false end
     local job, onDuty = Framework.GetJob()
     if job ~= dealer.job then return false end
-    return onDuty or not Config.Jobs.requireDuty
+    return onDuty or not dealer.settings.staff.requireDuty
 end
 
-function CanShop(dealer)
+function Can(dealer, action)
     if not dealer then return false end
-    if dealer.mode ~= 'job' or dealer.settings.access ~= 'job' then return true end
+    if dealer.mode ~= 'job' or dealer.job == '' then return true end
+    if dealer.settings.customers[action] then return true end
     return IsStaff(dealer)
+end
+
+function VehicleFromNet(netId, timeout)
+    local deadline = GetGameTimer() + (timeout or 10000)
+
+    repeat
+        if NetworkDoesNetworkIdExist(netId) then
+            local vehicle = NetworkGetEntityFromNetworkId(netId)
+            if vehicle ~= 0 and DoesEntityExist(vehicle) then return vehicle end
+        end
+        Wait(50)
+    until GetGameTimer() > deadline
+
+    return nil
+end
+
+function TakeControl(vehicle)
+    for _ = 1, 40 do
+        if NetworkHasControlOfEntity(vehicle) then return true end
+        NetworkRequestControlOfEntity(vehicle)
+        Wait(50)
+    end
+    return NetworkHasControlOfEntity(vehicle)
+end
+
+function FadeOut()
+    DoScreenFadeOut(250)
+    local deadline = GetGameTimer() + 600
+    while not IsScreenFadedOut() and GetGameTimer() < deadline do Wait(0) end
+end
+
+function WarpInto(vehicle)
+    local deadline = GetGameTimer() + 5000
+
+    repeat
+        local ped = cache.ped
+        if GetVehiclePedIsIn(ped, false) == vehicle then return true end
+        SetPedIntoVehicle(ped, vehicle, -1)
+        Wait(100)
+    until GetGameTimer() > deadline
+
+    return GetVehiclePedIsIn(cache.ped, false) == vehicle
 end
 
 local function clearBlips()
@@ -91,31 +134,25 @@ RegisterNetEvent('XS-Dealerships:client:spot', function(dealerId, spotId, model)
     dealer.showcase[spotId] = model
 end)
 
-RegisterNetEvent('XS-Dealerships:client:delivered', function(netId, props, plate)
-    local vehicle = 0
+RegisterNetEvent('XS-Dealerships:client:delivered', function(netId, props, plate, warp)
+    if warp then FadeOut() end
 
-    for _ = 1, 100 do
-        if NetworkDoesNetworkIdExist(netId) then
-            vehicle = NetworkGetEntityFromNetworkId(netId)
-            if vehicle ~= 0 and DoesEntityExist(vehicle) then break end
-        end
-        Wait(50)
+    local vehicle = VehicleFromNet(netId)
+
+    if vehicle then
+        TakeControl(vehicle)
+
+        if props.color1 then SetVehicleCustomPrimaryColour(vehicle, props.color1[1], props.color1[2], props.color1[3]) end
+        if props.color2 then SetVehicleCustomSecondaryColour(vehicle, props.color2[1], props.color2[2], props.color2[3]) end
+
+        SetVehicleNumberPlateText(vehicle, plate)
+        SetVehicleDirtLevel(vehicle, 0.0)
+        Fuel.Set(vehicle, 100.0)
+
+        if warp then WarpInto(vehicle) end
     end
 
-    if vehicle == 0 or not DoesEntityExist(vehicle) then return end
-
-    for _ = 1, 40 do
-        if NetworkHasControlOfEntity(vehicle) then break end
-        NetworkRequestControlOfEntity(vehicle)
-        Wait(50)
-    end
-
-    if props.color1 then SetVehicleCustomPrimaryColour(vehicle, props.color1[1], props.color1[2], props.color1[3]) end
-    if props.color2 then SetVehicleCustomSecondaryColour(vehicle, props.color2[1], props.color2[2], props.color2[3]) end
-
-    SetVehicleNumberPlateText(vehicle, plate)
-    SetVehicleDirtLevel(vehicle, 0.0)
-    Fuel.Set(vehicle, 100.0)
+    if warp then DoScreenFadeIn(400) end
 end)
 
 RegisterNetEvent('XS-Dealerships:client:diag', function(lines)

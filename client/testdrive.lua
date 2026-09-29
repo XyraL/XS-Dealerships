@@ -2,20 +2,19 @@ local driving = false
 
 RegisterNetEvent('XS-Dealerships:client:testDrive', function(netId, seconds)
     driving = true
+    FadeOut()
+
+    local vehicle = VehicleFromNet(netId)
+    if vehicle then
+        TakeControl(vehicle)
+        Fuel.Set(vehicle, 100.0)
+        SetVehicleDirtLevel(vehicle, 0.0)
+        WarpInto(vehicle)
+    end
+
+    DoScreenFadeIn(400)
     UI.Send('testdrive', { seconds = seconds })
     Framework.Notify(('Test drive started. You have %d seconds.'):format(seconds), 'inform')
-
-    for _ = 1, 100 do
-        if NetworkDoesNetworkIdExist(netId) then
-            local vehicle = NetworkGetEntityFromNetworkId(netId)
-            if vehicle ~= 0 and DoesEntityExist(vehicle) then
-                Fuel.Set(vehicle, 100.0)
-                SetVehicleDirtLevel(vehicle, 0.0)
-                break
-            end
-        end
-        Wait(50)
-    end
 end)
 
 local REASONS = {

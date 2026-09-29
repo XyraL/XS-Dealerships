@@ -92,6 +92,16 @@ function UI.OpenShowroom(dealerId, context)
     send('showroom', data)
 end
 
+function UI.Delivered(result)
+    if result.garage then
+        Framework.Notify(('Your new %s is waiting in your garage.'):format(result.name), 'success')
+    elseif result.warp then
+        Framework.Notify(('Your new %s is all yours. Plate %s.'):format(result.name, result.plate), 'success')
+    else
+        Framework.Notify(('Your new %s is out front. Plate %s.'):format(result.name, result.plate), 'success')
+    end
+end
+
 function UI.TestDrive(dealerId, model)
     if not model then return end
     local ok, err = lib.callback.await('XS-Dealerships:server:testDrive', false, dealerId, model, UI.ModelType(model))
@@ -115,12 +125,7 @@ RegisterNUICallback('buy', function(data, cb)
 
     cb({ ok = true })
     UI.Close()
-
-    if result.garage then
-        Framework.Notify(('Your new %s is waiting in your garage.'):format(result.name), 'success')
-    else
-        Framework.Notify(('Your new %s is out front. Plate %s.'):format(result.name, result.plate), 'success')
-    end
+    UI.Delivered(result)
 end)
 
 RegisterNUICallback('testDrive', function(data, cb)
@@ -179,11 +184,5 @@ RegisterNUICallback('answer', function(data, cb)
     cb({ ok = true })
     UI.Close()
 
-    if data.accept and type(result) == 'table' then
-        if result.garage then
-            Framework.Notify(('Your new %s is waiting in your garage.'):format(result.name), 'success')
-        else
-            Framework.Notify(('Your new %s is out front. Plate %s.'):format(result.name, result.plate), 'success')
-        end
-    end
+    if data.accept and type(result) == 'table' then UI.Delivered(result) end
 end)

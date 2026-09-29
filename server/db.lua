@@ -74,6 +74,7 @@ local TABLES = {
             `status` VARCHAR(16) NOT NULL DEFAULT 'active',
             `vehicle` LONGTEXT NULL,
             `held_until` INT UNSIGNED NULL,
+            `terms` LONGTEXT NULL,
             `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (`id`),
             KEY `citizenid` (`citizenid`),
@@ -95,11 +96,34 @@ local TABLES = {
     ]],
 }
 
+local COLUMNS = {
+    { 'xs_dealership_finance', 'terms', 'LONGTEXT NULL' },
+}
+
+local function addColumn(tableName, column, definition)
+    local found = MySQL.scalar.await([[
+        SELECT 1 FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?
+    ]], { tableName, column })
+
+    if not found then
+        MySQL.query.await(('ALTER TABLE `%s` ADD COLUMN `%s` %s'):format(tableName, column, definition))
+    end
+end
+
 function DB.Install()
     for _, statement in ipairs(TABLES) do
         local ok, err = pcall(MySQL.query.await, statement)
         if not ok then
             print(('^1[XS-Dealerships]^0 could not create a table: %s'):format(tostring(err)))
+            return false
+        end
+    end
+
+    for _, entry in ipairs(COLUMNS) do
+        local ok, err = pcall(addColumn, entry[1], entry[2], entry[3])
+        if not ok then
+            print(('^1[XS-Dealerships]^0 could not add %s.%s: %s'):format(entry[1], entry[2], tostring(err)))
             return false
         end
     end

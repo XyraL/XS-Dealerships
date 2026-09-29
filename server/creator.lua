@@ -17,8 +17,7 @@ local function creatorData()
         vehicles = vehicles,
         jobs = Framework.JobList(),
         types = types,
-        jobStock = Config.Stock.jobDefault,
-        commission = Config.Jobs.commission,
+        defaults = Store.DefaultSettings(),
     }
 end
 

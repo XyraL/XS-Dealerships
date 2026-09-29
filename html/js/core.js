@@ -124,6 +124,40 @@ XS.barcode = function (seed) {
     return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
 };
 
+function brighten(r, g, b, floor) {
+    const [R, G, B] = [r / 255, g / 255, b / 255];
+    const max = Math.max(R, G, B);
+    const min = Math.min(R, G, B);
+    const d = max - min;
+    let h = 0;
+    let s = 0;
+    let l = (max + min) / 2;
+
+    if (d) {
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        if (max === R) h = (G - B) / d + (G < B ? 6 : 0);
+        else if (max === G) h = (B - R) / d + 2;
+        else h = (R - G) / d + 4;
+        h /= 6;
+    }
+
+    l = Math.max(l, floor);
+    if (!s) return `rgb(${Math.round(l * 255)}, ${Math.round(l * 255)}, ${Math.round(l * 255)})`;
+
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    const hue = (t) => {
+        if (t < 0) t += 1;
+        if (t > 1) t -= 1;
+        if (t < 1 / 6) return p + (q - p) * 6 * t;
+        if (t < 1 / 2) return q;
+        if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+        return p;
+    };
+
+    return `rgb(${Math.round(hue(h + 1 / 3) * 255)}, ${Math.round(hue(h) * 255)}, ${Math.round(hue(h - 1 / 3) * 255)})`;
+}
+
 XS.setAccent = function (hex) {
     const value = /^#[0-9a-f]{6}$/i.test(hex || '') ? hex : '#b3121b';
     document.documentElement.style.setProperty('--accent', value);
@@ -132,6 +166,7 @@ XS.setAccent = function (hex) {
     const b = parseInt(value.slice(5, 7), 16);
     const luma = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
     document.documentElement.style.setProperty('--on-accent', luma > 0.6 ? '#16181c' : '#ffffff');
+    document.documentElement.style.setProperty('--accent-lift', brighten(r, g, b, 0.55));
 };
 
 XS.clear = function (node) {

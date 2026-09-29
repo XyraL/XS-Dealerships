@@ -4,8 +4,26 @@ local GRACE = 300
 local firstSeen = {}
 local awaitingEmpty = {}
 
-local function interval()
-    return math.max(1, math.floor((tonumber(Config.Finance.intervalHours) or 24) * 3600))
+local function rules(row)
+    local dealer = Store.Get(row.dealership_id)
+    local base = dealer and dealer.settings.finance or Config.Finance
+    local saved = Util.Decode(row.terms)
+    if type(saved) ~= 'table' then saved = {} end
+
+    local repossess = saved.repossess or base.repossess
+
+    return {
+        intervalHours = tonumber(saved.intervalHours) or tonumber(base.intervalHours) or 24,
+        missedLimit = math.max(1, math.floor(tonumber(saved.missedLimit) or tonumber(base.missedLimit) or 3)),
+        repossess = repossess == 'hold' and 'hold' or 'remove',
+        holdDays = math.max(1, math.floor(tonumber(saved.holdDays) or tonumber(base.holdDays) or 7)),
+        returnToStock = base.returnToStock ~= false,
+        garage = dealer and dealer.settings.sale.garage or Config.Purchase.garage,
+    }
+end
+
+local function interval(terms)
+    return math.max(60, math.floor((tonumber(terms.intervalHours) or 24) * 3600))
 end
 
 local function carName(model)
@@ -22,13 +40,21 @@ function Finance.OpenCount(citizenid)
 end
 
 function Finance.Open(src, dealer, model, plate, terms)
+    local settings = dealer.settings.finance
+    local signed = {
+        intervalHours = settings.intervalHours,
+        missedLimit = settings.missedLimit,
+        repossess = settings.repossess,
+        holdDays = settings.holdDays,
+    }
+
     MySQL.insert.await([[
         INSERT INTO `xs_dealership_finance`
-            (`dealership_id`, `citizenid`, `plate`, `model`, `price`, `balance`, `payment`, `payments_left`, `next_due`, `status`)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')
+            (`dealership_id`, `citizenid`, `plate`, `model`, `price`, `balance`, `payment`, `payments_left`, `next_due`, `status`, `terms`)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)
     ]], {
         dealer.id, Framework.GetCitizenId(src), plate, model, terms.price, terms.total, terms.payment,
-        terms.payments, os.time() + interval(),
+        terms.payments, os.time() + interval(signed), json.encode(signed),
     })
 end
 
@@ -53,9 +79,10 @@ local function takeBack(row, src)
     end
 
     local name = carName(row.model)
+    local terms = rules(row)
 
-    if Config.Finance.repossess == 'hold' and vehicleRow then
-        local days = math.max(1, math.floor(tonumber(Config.Finance.holdDays) or 7))
+    if terms.repossess == 'hold' and vehicleRow then
+        local days = terms.holdDays
         MySQL.update.await([[
             UPDATE `xs_dealership_finance` SET `status` = 'held', `vehicle` = ?, `held_until` = ? WHERE `id` = ?
         ]], { json.encode(vehicleRow), os.time() + days * 86400, row.id })
@@ -70,7 +97,7 @@ local function takeBack(row, src)
     MySQL.update.await("UPDATE `xs_dealership_finance` SET `status` = 'repossessed' WHERE `id` = ?", { row.id })
 
     local dealer = Store.Get(row.dealership_id)
-    if dealer and Config.Finance.returnToStock then Store.AddStock(dealer, row.model, 1) end
+    if dealer and terms.returnToStock then Store.AddStock(dealer, row.model, 1) end
 
     if src then
         Framework.Notify(src, ('The dealership has taken your %s back after missed payments.'):format(name), 'error')
@@ -80,6 +107,7 @@ end
 local function charge(src, row)
     local amount = math.min(row.payment, row.balance)
     local name = carName(row.model)
+    local terms = rules(row)
 
     if Framework.RemoveMoney(src, 'bank', amount, ('Finance payment: %s'):format(name)) then
         local balance = row.balance - amount
@@ -89,7 +117,7 @@ local function charge(src, row)
             UPDATE `xs_dealership_finance`
             SET `balance` = ?, `payments_left` = GREATEST(`payments_left` - 1, 0), `next_due` = `next_due` + ?, `missed` = 0, `status` = ?
             WHERE `id` = ?
-        ]], { math.max(0, balance), interval(), status, row.id })
+        ]], { math.max(0, balance), interval(terms), status, row.id })
 
         deposit(row, amount, Framework.GetName(src))
 
@@ -103,7 +131,7 @@ local function charge(src, row)
 
     local missed = row.missed + 1
 
-    if missed >= Config.Finance.missedLimit then
+    if missed >= terms.missedLimit then
         MySQL.update.await('UPDATE `xs_dealership_finance` SET `missed` = ? WHERE `id` = ?', { missed, row.id })
         row.missed = missed
         takeBack(row, src)
@@ -111,9 +139,9 @@ local function charge(src, row)
     end
 
     MySQL.update.await('UPDATE `xs_dealership_finance` SET `missed` = ?, `next_due` = `next_due` + ? WHERE `id` = ?',
-        { missed, interval(), row.id })
+        { missed, interval(terms), row.id })
 
-    local left = Config.Finance.missedLimit - missed
+    local left = terms.missedLimit - missed
     Framework.Notify(src, ('Your %s payment on the %s did not go through. %d more missed and it gets taken back.')
         :format(Util.Money(amount), name, left), 'error')
 end
@@ -162,7 +190,7 @@ CreateThread(function()
             ]], { now }) or {}) do
                 MySQL.update.await("UPDATE `xs_dealership_finance` SET `status` = 'repossessed', `vehicle` = NULL WHERE `id` = ?", { row.id })
                 local dealer = Store.Get(row.dealership_id)
-                if dealer and Config.Finance.returnToStock then Store.AddStock(dealer, row.model, 1) end
+                if dealer and rules(row).returnToStock then Store.AddStock(dealer, row.model, 1) end
             end
 
             for plate in pairs(awaitingEmpty) do
@@ -205,7 +233,7 @@ local function listFor(citizenid)
             paymentsLeft = row.payments_left,
             dueIn = row.next_due - now,
             missed = row.missed,
-            missedLimit = Config.Finance.missedLimit,
+            missedLimit = rules(row).missedLimit,
             status = row.status,
             heldFor = row.held_until and (row.held_until - now) or nil,
         }
@@ -253,7 +281,7 @@ lib.callback.register('XS-Dealerships:server:pay', function(src, id, everything)
             UPDATE `xs_dealership_finance`
             SET `balance` = ?, `payments_left` = GREATEST(`payments_left` - 1, 0), `next_due` = `next_due` + ?, `missed` = 0, `status` = ?
             WHERE `id` = ?
-        ]], { math.max(0, balance), interval(), status, row.id })
+        ]], { math.max(0, balance), interval(rules(row)), status, row.id })
     end
 
     deposit(row, amount, Framework.GetName(src))
@@ -274,7 +302,7 @@ lib.callback.register('XS-Dealerships:server:recover', function(src, id)
         return false, ('You need %s in the bank.'):format(Util.Money(row.balance))
     end
 
-    if not Framework.RestoreOwnedVehicle(snapshot, Config.Purchase.garage) then
+    if not Framework.RestoreOwnedVehicle(snapshot, rules(row).garage) then
         Framework.AddMoney(src, 'bank', row.balance, 'Dealership refund')
         return false, 'The car could not be put back in your garage. You have not been charged.'
     end

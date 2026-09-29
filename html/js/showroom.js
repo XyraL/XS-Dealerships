@@ -20,6 +20,11 @@
         return S.data ? S.data.dealer : null;
     }
 
+    function can(action) {
+        const allowed = S.data && S.data.can;
+        return !!(allowed && allowed[action]);
+    }
+
     function car(model) {
         return S.cars.find((c) => c.model === model) || null;
     }
@@ -111,7 +116,7 @@
         if (ctx.swap) {
             banner.hidden = false;
             banner.textContent = 'Pick the car to put on this display spot.';
-        } else if (!S.data.canShop) {
+        } else if (!can('buy')) {
             banner.hidden = false;
             const staff = S.data.staffOnDuty || 0;
             banner.textContent = staff > 0
@@ -161,14 +166,17 @@
         const role = S.data.role || {};
         const actions = el('div', { class: 'actions' });
 
-        if (ctx.swap && S.data.canShop) {
+        if (ctx.swap && can('swap')) {
             actions.append(button('Show this one here', 'primary', () => swap(c)));
         }
 
-        if (S.data.canShop) {
+        if (can('buy')) {
             actions.append(button(c.stock === 0 ? 'Sold out' : 'Buy', ctx.swap ? '' : 'primary', () => { S.step = 'buy'; renderSide(); }, c.stock === 0));
-            if (S.data.testDrives) actions.append(button('Test drive', '', () => testDrive(c)));
-        } else if (!role.staff) {
+        }
+
+        if (S.data.testDrives && can('test')) actions.append(button('Test drive', '', () => testDrive(c)));
+
+        if (!can('buy') && !role.staff) {
             actions.append(el('p', { class: 'fine', text: 'Ask one of the salespeople to sell you this car.' }));
         }
 
@@ -311,7 +319,7 @@
 
         const focus = ctx.focus && car(ctx.focus) ? ctx.focus : (S.cars[0] && S.cars[0].model);
         S.selected = focus || null;
-        S.step = ctx.step === 'buy' && data.canShop ? 'buy' : ctx.step === 'sell' && data.role && data.role.canSell ? 'sell' : 'view';
+        S.step = ctx.step === 'buy' && can('buy') ? 'buy' : ctx.step === 'sell' && data.role && data.role.canSell ? 'sell' : 'view';
 
         $('sr-search').value = '';
         renderMast();

@@ -100,11 +100,13 @@ if IsDuplicityVersion() then
         return nil
     end
 
-    function Framework.OnDutyCount(jobName)
+    function Framework.OnDutyCount(jobName, requireDuty)
+        if requireDuty == nil then requireDuty = Config.Jobs.requireDuty end
+
         local count = 0
         for _, player in pairs(Framework.Players()) do
             local job = player.PlayerData and player.PlayerData.job
-            if job and job.name == jobName and (job.onduty or not Config.Jobs.requireDuty) then
+            if job and job.name == jobName and (job.onduty or not requireDuty) then
                 count = count + 1
             end
         end
@@ -129,6 +131,24 @@ if IsDuplicityVersion() then
         return out
     end
 
+    local function gradesOf(job)
+        local out = {}
+
+        for key, grade in pairs(type(job) == 'table' and type(job.grades) == 'table' and job.grades or {}) do
+            local level = tonumber(key)
+            if level then
+                out[#out + 1] = {
+                    level = math.floor(level),
+                    name = type(grade) == 'table' and tostring(grade.name or grade.label or level) or tostring(level),
+                    boss = type(grade) == 'table' and (grade.isboss == true or grade.isBoss == true) or false,
+                }
+            end
+        end
+
+        table.sort(out, function(a, b) return a.level < b.level end)
+        return out
+    end
+
     function Framework.JobList()
         local out = {}
 
@@ -140,6 +160,7 @@ if IsDuplicityVersion() then
                 out[#out + 1] = {
                     name = name,
                     label = type(job) == 'table' and (job.label or job.name) or name,
+                    grades = gradesOf(job),
                 }
             end
         end)
@@ -291,6 +312,28 @@ if IsDuplicityVersion() then
             MySQL.update.await('UPDATE `player_vehicles` SET `garage_id` = ? WHERE `plate` = ?', { garage, plate })
         end
 
+        return true
+    end
+
+    function Framework.ParkOwnedVehicle(plate, garage)
+        local cols = vehicleColumns()
+        local sets, values = {}, {}
+
+        local function put(column, value)
+            if not cols[column] then return end
+            sets[#sets + 1] = ('`%s` = ?'):format(column)
+            values[#values + 1] = value
+        end
+
+        put('state', 1)
+        put('garage', garage)
+        put('in_garage', 1)
+        put('garage_id', garage)
+
+        if #sets == 0 then return false end
+
+        values[#values + 1] = plate
+        MySQL.update.await(('UPDATE `player_vehicles` SET %s WHERE `plate` = ?'):format(table.concat(sets, ', ')), values)
         return true
     end
 

@@ -32,11 +32,17 @@ RegisterNUICallback('place', function(data, cb)
     SetNuiFocus(false, false)
     UI.Send('hide')
 
+    local dealerId = tonumber(data.dealer)
+    if dealerId then Showcase.Hide(dealerId, true) end
+
     local point = Placement.Start({
         label = data.label,
         preview = data.preview,
         origin = data.origin,
+        others = data.others,
     })
+
+    if dealerId then Showcase.Hide(dealerId, false) end
 
     SetNuiFocus(true, true)
     UI.Send('unhide')
