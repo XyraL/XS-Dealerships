@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.1] — 2026-10-11
+
+- Fixed bought cars and test drives coming without keys on servers running qb-vehiclekeys
+
+### Updating
+
+Replace everything except your config.lua. No SQL to run.
+
 ## [1.0.0] — 2026-09-29
 
 First release.
