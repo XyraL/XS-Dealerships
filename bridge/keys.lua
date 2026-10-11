@@ -20,8 +20,12 @@ do
 end
 
 local SERVER_SIDE = {
-    qbx_vehiclekeys = true, ['Renewed-Vehiclekeys'] = true, wasabi_carlock = true, custom = true,
+    qbx_vehiclekeys = true, ['Renewed-Vehiclekeys'] = true, wasabi_carlock = true, ['qb-vehiclekeys'] = true, custom = true,
 }
+
+local function trim(plate)
+    return (tostring(plate or ''):gsub('^%s+', ''):gsub('%s+$', ''))
+end
 
 if IsDuplicityVersion() then
     function Keys.Give(src, vehicle, plate)
@@ -39,6 +43,13 @@ if IsDuplicityVersion() then
                 exports['Renewed-Vehiclekeys']:addKey(src, plate)
             elseif Keys.name == 'wasabi_carlock' then
                 exports.wasabi_carlock:GiveKey(src, plate)
+            elseif Keys.name == 'qb-vehiclekeys' then
+                -- Current qb-vehiclekeys gives keys from the server, by the plate
+                -- without GTA's padding. Older builds only have the client event.
+                plate = trim(plate)
+                if not pcall(function() exports['qb-vehiclekeys']:GiveKeys(src, plate) end) then
+                    TriggerClientEvent('XS-Dealerships:client:giveKeys', src, NetworkGetNetworkIdFromEntity(vehicle), plate)
+                end
             elseif Keys.name == 'custom' then
                 if Config.CustomKeysEvent == '' then error('Config.CustomKeysEvent is empty') end
                 TriggerEvent(Config.CustomKeysEvent, src, plate, NetworkGetNetworkIdFromEntity(vehicle))
