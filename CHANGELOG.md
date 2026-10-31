@@ -2,7 +2,7 @@
 
 ## [1.0.2] — 2026-10-30
 
-- Switching character ends a test drive, closes the tablet and cancels sale offers
+- Logging out ends a test drive, closes the tablet and cancels sale offers
 - Fixed the screen locking after placing a point once the creator was closed
 
 ### Updating
