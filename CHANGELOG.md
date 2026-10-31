@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.0.2] — 2026-10-30
+
+- Switching character ends a test drive, closes the tablet and cancels sale offers
+- Fixed the screen locking after placing a point once the creator was closed
+
+### Updating
+
+Replace everything except your config.lua. No SQL to run.
+
 ## [1.0.1] — 2026-10-11
 
 - Fixed bought cars and test drives coming without keys on servers running qb-vehiclekeys

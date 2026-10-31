@@ -5,7 +5,7 @@ lua54 'yes'
 name 'XS-Dealerships'
 author 'XyraL'
 description 'Dealerships and a dealership creator for Qbox and QBCore: NPC or job-run, showcase cars, finance and stock orders.'
-version '1.0.1'
+version '1.0.2'
 
 dependencies {
     'ox_lib',

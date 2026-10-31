@@ -265,7 +265,19 @@ lib.callback.register('XS-Dealerships:server:answer', function(src, accept, meth
     return ok, result
 end)
 
+local function leave(src)
+    busy[src] = nil
+    offers[src] = nil
+
+    for target, offer in pairs(offers) do
+        if offer.seller == src then offers[target] = nil end
+    end
+end
+
 AddEventHandler('playerDropped', function()
-    busy[source] = nil
-    offers[source] = nil
+    leave(source)
+end)
+
+AddEventHandler('QBCore:Server:OnPlayerUnload', function(src)
+    leave(tonumber(src) or source)
 end)

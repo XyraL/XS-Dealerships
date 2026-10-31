@@ -173,6 +173,11 @@ end)
 
 RegisterNetEvent('QBCore:Client:OnPlayerLoaded', ready)
 
+RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
+    if UI.open then UI.Close() end
+    Placement.Abort()
+end)
+
 AddEventHandler('onResourceStop', function(resource)
     if resource ~= GetCurrentResourceName() then return end
     clearBlips()

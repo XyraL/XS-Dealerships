@@ -44,8 +44,10 @@ RegisterNUICallback('place', function(data, cb)
 
     if dealerId then Showcase.Hide(dealerId, false) end
 
-    SetNuiFocus(true, true)
-    UI.Send('unhide')
+    if UI.open then
+        SetNuiFocus(true, true)
+        UI.Send('unhide')
+    end
     cb(point or false)
 end)
 

@@ -12,7 +12,7 @@ local function finish(src, reason)
     if not GetPlayerName(src) then return end
 
     if drive.bucket then SetPlayerRoutingBucket(src, drive.homeBucket or 0) end
-    TriggerClientEvent('XS-Dealerships:client:testDriveEnd', src, reason, drive.returnToStart and drive.origin or nil)
+    TriggerClientEvent('XS-Dealerships:client:testDriveEnd', src, reason, drive.returnToStart and reason ~= 'logout' and drive.origin or nil)
 end
 
 function TestDrive.Active(src)
@@ -87,6 +87,10 @@ end)
 
 AddEventHandler('playerDropped', function()
     finish(source, 'left')
+end)
+
+AddEventHandler('QBCore:Server:OnPlayerUnload', function(src)
+    finish(tonumber(src) or source, 'logout')
 end)
 
 AddEventHandler('onResourceStop', function(resource)
