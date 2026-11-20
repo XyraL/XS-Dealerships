@@ -6,22 +6,49 @@ local SUPPORTED = {
     'Renewed-Banking', 'qb-banking', 'okokBanking', 'tgg-banking', 'wasabi_banking', 'fd_banking', 'qb-management',
 }
 
-local function detect()
-    local forced = Config.Bridges.banking
-    if forced == 'none' then return nil end
-    if forced ~= 'auto' then return forced end
-
-    for _, resource in ipairs(SUPPORTED) do
-        if GetResourceState(resource) == 'started' then return resource end
-    end
-
-    return nil
+local function setting()
+    return Config.Bridges and Config.Bridges.banking or 'auto'
 end
 
-Banking.name = detect()
+function Banking.Detect()
+    local forced = setting()
+    if forced == 'none' then
+        Banking.name = nil
+    elseif forced ~= 'auto' then
+        Banking.name = forced
+    else
+        Banking.name = nil
+        for _, resource in ipairs(SUPPORTED) do
+            if GetResourceState(resource) == 'started' then Banking.name = resource break end
+        end
+    end
+    return Banking.name
+end
+
+function Banking.Ready()
+    if not Banking.name then Banking.Detect() end
+    return Banking.name ~= nil
+end
+
+Banking.Detect()
+
+AddEventHandler('onResourceStart', function(resource)
+    if Banking.name then return end
+    for _, name in ipairs(SUPPORTED) do
+        if name == resource then
+            Banking.Detect()
+            if Banking.name then print(('^2[XS-Dealerships]^0 banking found: %s.'):format(Banking.name)) end
+            return
+        end
+    end
+end)
+
+AddEventHandler('onResourceStop', function(resource)
+    if resource == Banking.name and setting() ~= Banking.name then Banking.name = nil end
+end)
 
 function Banking.LedgerOnly()
-    return Banking.name == nil
+    return not Banking.Ready()
 end
 
 local function account(dealer)

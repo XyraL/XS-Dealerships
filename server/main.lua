@@ -48,7 +48,7 @@ end, false)
 RegisterCommand('dealerdiag', function(src)
     local lines = {
         ('framework: %s'):format(Framework.name or 'NONE FOUND'),
-        ('banking: %s'):format(Banking.name or 'own ledger'),
+        ('banking: %s'):format(Banking.Ready() and Banking.name or 'own ledger'),
         ('keys (server): %s'):format(Keys.name or 'none'),
         ('inventory: %s · tablet item: %s'):format(Inventory.name or 'none', Config.Tablet.item ~= '' and Config.Tablet.item or 'none, office at the desk'),
         ('dealerships loaded: %s'):format(Store.loaded and 'yes' or 'NO'),

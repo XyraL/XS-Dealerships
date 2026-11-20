@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.3] — 2026-11-20
+
+- Business accounts now work if your bank starts later
+
+### Updating
+
+Replace everything except your config.lua. No SQL to run.
+
 ## [1.0.2] — 2026-10-30
 
 - Logging out ends a test drive, closes the tablet and cancels sale offers
